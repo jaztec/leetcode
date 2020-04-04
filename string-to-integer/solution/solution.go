@@ -1,14 +1,17 @@
 package solution
 
-import "fmt"
-
-import "strconv"
+import (
+	"errors"
+	"math"
+	"strconv"
+)
 
 const (
 	lowerboundsErr = "passed lower bounds"
 	upperboundsErr = "passed upper bounds"
 
 	minValue = -2147483648
+	maxValue = 2147483647
 )
 
 func myAtoi(str string) int {
@@ -16,9 +19,11 @@ func myAtoi(str string) int {
 	if err != nil {
 		switch err.Error() {
 		case lowerboundsErr:
-			return -2147483648
+			return minValue
 		case upperboundsErr:
-			return 2147483647
+			return maxValue
+		default:
+			panic(err)
 		}
 	}
 	return n
@@ -26,41 +31,71 @@ func myAtoi(str string) int {
 
 func parse(s string) (int, error) {
 	bytes := []byte(s)
-	record := false
+	record := 0
+	ticks := 0
 	negative := false
+	minusSet := false
+	plusSet := false
 	var number int32
-	fmt.Println(s, bytes)
-	for i, r := range bytes {
-		fmt.Printf("pos %d holds '%s' or '%b'\n", i, string(r), r)
-		if r|0x20 == 0x20 {
-			fmt.Println("hit space")
-			if record {
+	for _, b := range bytes {
+		// space
+		if b|0x20 == 0x20 {
+			if ticks > 0 || plusSet || minusSet {
 				break
 			}
 			continue
 		}
-		if (int(r) >= 0 && int(r) < 10) || r|0x2d == 0x2d {
-			record = true
-		}
-		if !record {
-			continue
-		}
-		if record {
-			fmt.Println("in record")
-			if r|0x2d == 0x2d {
+		// minus
+		if b|0x2d == 0x2d && record == 0 && ticks == 0 {
+			if !plusSet && !minusSet {
 				negative = true
+				minusSet = true
+				continue
 			}
-			add, err := strconv.Atoi(string(r))
-			if err != nil {
-				break
-			}
-			// multiply per iteration
-			number = (number << 3) + (number << 1)
-			number += int32(add)
+			break
 		}
+		// plus
+		if b|0x2b == 0x2b && record == 0 && ticks == 0 {
+			if !minusSet && !plusSet {
+				plusSet = true
+				continue
+			}
+			break
+		}
+
+		add, err := strconv.Atoi(string(b))
+		if err != nil {
+			break
+		}
+		if add == 0 && record == 0 {
+			ticks++
+			continue
+		}
+
+		temp := int64(number)
+		if record > 0 {
+			temp *= 10
+		}
+
+		if temp+int64(add) > maxValue || temp+int64(add) == minValue {
+			if negative {
+				return 0, errors.New(lowerboundsErr)
+			}
+			return 0, errors.New(upperboundsErr)
+		}
+		number = int32(temp)
+
+		number += int32(add)
+		record++
+		ticks++
 	}
 	if negative {
-		return -1, nil
+		number = -int32(math.Abs(float64(number)))
+	} else {
+		if number == minValue {
+			return 0, errors.New(upperboundsErr)
+		}
+		number = int32(math.Abs(float64(number)))
 	}
 	return int(number), nil
 }
