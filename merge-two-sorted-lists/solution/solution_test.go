@@ -45,9 +45,6 @@ func validateAnswer(l1 *ListNode, l2 *ListNode) error {
 	return nil
 }
 
-// Input: 1->2->4, 1->3->4
-// Output: 1->1->2->3->4->4
-
 func TestMergeTwoLists(t *testing.T) {
 	type test struct {
 		l1 []int
@@ -59,6 +56,16 @@ func TestMergeTwoLists(t *testing.T) {
 			l1: []int{1, 2, 4},
 			l2: []int{1, 3, 4},
 			a:  []int{1, 1, 2, 3, 4, 4},
+		},
+		{
+			l1: []int{},
+			l2: []int{1, 2, 3, 4},
+			a:  []int{1, 2, 3, 4},
+		},
+		{
+			l1: []int{1, 2, 3, 4},
+			l2: []int{},
+			a:  []int{1, 2, 3, 4},
 		},
 	}
 	for _, tN := range tests {
